@@ -1,0 +1,21 @@
+body {
+    font-family: sans-serif;
+    padding: 20px;
+}
+
+.map {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.merchant-button button {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.item-card {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trade with {{ merchant.name }}</title>
+</head>
+<body>
+    <h2>{{ merchant.name }} — Level {{ merchant.level }}</h2>
+    <p>Location: {{ merchant.location }} | Category: {{ merchant.category }}</p>
+    <p>Open: {{ merchant.hr_open }} - {{ merchant.hr_close }} | Balance: ${{ merchant.balance }}</p>
+
+    <div class="inventory">
+        {% for item in items %}
+            <div class="item-card">
+                <h3>{{ item.name }} (x{{ item.quantity }})</h3>
+                <p>{{ item.description }}</p>
+                <ul>
+                    <li>Buy: ${{ item.buy_cost }}</li>
+                    <li>Sell: ${{ item.sell_price }}</li>
+                    <li>Weight: {{ item.weight }}</li>
+                    <li>Rarity: {{ item.rarity }}</li>
+                    <li>Effect: {{ item.effect_type }} ({{ item.effect_value }})</li>
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('index') }}">Back to Map</a>
+</body>
+</html>

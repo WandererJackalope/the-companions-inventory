@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Merchant Map</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Merchant Map</h1>
+    <div class="map">
+        {% for merchant in merchants %}
+            <div class="merchant-button">
+                <a href="{{ url_for('trade', merch_id=merchant.merch_id) }}">
+                    <button>{{ merchant.name }}</button>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
