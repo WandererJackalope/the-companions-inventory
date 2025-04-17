@@ -1,8 +1,10 @@
+import os
+
 DB_CONFIG = {
-    'host': 'inventory-csci-340.i.aivencloud.com',
-    'port': 25113,
-    'user': 'avnadmin',
-    'password': 'AVNS_BPwVzPegVx_YHmwrxam',
-    'database': 'RPGShop',  # <- replace with your actual DB name
-    'ssl_ca': 'certs/ca.pem'           # <- path to your SSL certificate
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 3306)),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'),
+    'database': os.getenv('DB_NAME'),
+    'ssl_ca': 'certs/ca.pem'
 }

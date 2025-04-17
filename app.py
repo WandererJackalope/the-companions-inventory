@@ -1,5 +1,9 @@
 from flask import Flask, render_template, request
 import mysql.connector
+
+from dotenv import load_dotenv
+load_dotenv()
+
 from config import DB_CONFIG
 
 app = Flask(__name__)
