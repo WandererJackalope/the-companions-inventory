@@ -1,26 +1,37 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 import mysql.connector
-
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from config import DB_CONFIG
 
 app = Flask(__name__)
 
+app.secret_key = 'your_secret_key_here'  # use a strong secret in production!
+
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
-@app.route('/')
-def index():
+@app.route('/', methods=['GET', 'POST'])
+def welcome():
+    if request.method == 'POST':
+        session['player_name'] = request.form['player_name']
+        return redirect(url_for('map'))
+
+    return render_template('welcome.html')
+
+@app.route('/map')
+def map():
+    # Get list of cities like before
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT DISTINCT location AS name FROM merchant")
     cities = cursor.fetchall()
     cursor.close()
     db.close()
-    return render_template('index.html', cities=cities)
 
+    return render_template('map.html', cities=cities, player=session.get('player_name'))
 
 @app.route('/trade/<int:merch_id>')
 def trade(merch_id):
