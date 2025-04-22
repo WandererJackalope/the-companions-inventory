@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>Merchant Map</title>
+    {% if player %}
+        <p>Welcome, {{ player }}!</p>
+    {% endif %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         .map-container {
