@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Merchants in {{ location }}</title>
+</head>
+<body>
+    <a href="{{ url_for('index') }}"><button>⬅ Back to Map</button></a>
+    <h1>Merchants in {{ location }}</h1>
+
+    {% if merchants %}
+        <ul>
+            {% for merchant in merchants %}
+                <li>
+                    <a href="{{ url_for('trade', merch_id=merchant.merch_id) }}">
+                        {{ merchant.name }} (Level {{ merchant.level }})
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No merchants found in {{ location }}</p>
+    {% endif %}
+</body>
+</html>
