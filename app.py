@@ -10,6 +10,7 @@ app = Flask(__name__)
 
 app.secret_key = 'your_secret_key_here'  # use a strong secret in production!
 
+
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
@@ -85,6 +86,7 @@ def welcome():
 
     return render_template('welcome.html')
 
+
 @app.route('/map')
 def map():
     # Handle session errors
@@ -100,6 +102,7 @@ def map():
     db.close()
 
     return render_template('map.html', cities=cities, player=session.get('player_name'))
+
 
 @app.route('/trade/<int:merch_id>')
 def trade(merch_id):
@@ -223,4 +226,3 @@ def city(location):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
