@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>Merchants Hub</title>
+</head>
+
+<body>
+    <a href="{{ url_for('map') }}"><button>⬅ Back to Map</button></a>
+    <h1>Merchants Hub</h1>
+    <hr>
+
+    {% if player %}
+    <h2>Player</h2>
+    <ul>
+        <li>
+            <a href="{{ url_for('merchant_inventory', merch_id=player.merch_id) }}">
+                {{ player.name }} (Level {{ player.level }})
+            </a>
+        </li>
+    </ul>
+    {% endif %}
+    
+    <h2>Merchants</h2>
+    <ul>
+        {% for merchant in merchants %}
+        <li>
+            <a href="{{ url_for('merchant_inventory', merch_id=merchant.merch_id) }}">
+                {{ merchant.name }} (Level {{ merchant.level }})
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+
+</body>
+
+</html>
