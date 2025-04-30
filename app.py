@@ -111,26 +111,48 @@ def map():
 
 @app.route('/trade/<int:merch_id>')
 def trade(merch_id):
+    player_id = session.get('player_merch_id')
+    if player_id is None:
+        return redirect(url_for('welcome'))
+
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
 
-    # Get merchant info
+    # merchant info + inventory
     cursor.execute("SELECT * FROM merchant WHERE merch_id = %s", (merch_id,))
     merchant = cursor.fetchone()
-
-    # Get merchant's inventory + item details
     cursor.execute("""
-        SELECT i.item_id, i.name, i.description, i.buy_cost, i.sell_price, i.weight, 
+        SELECT i.item_id, i.name, i.description, i.buy_cost, i.sell_price, i.weight,
                i.rarity, i.effect_type, i.effect_value, inv.quantity
         FROM inventory inv
         JOIN item i ON inv.item_id = i.item_id
         WHERE inv.merch_id = %s
     """, (merch_id,))
-    items = cursor.fetchall()
+    merchant_items = cursor.fetchall()
+
+    # player info & player inventory
+    cursor.execute("SELECT balance, name FROM merchant WHERE merch_id = %s", (player_id,))
+    player = cursor.fetchone()
+    cursor.execute("""
+        SELECT i.item_id, i.name, i.description, i.buy_cost, i.sell_price, i.weight,
+               i.rarity, i.effect_type, i.effect_value, inv.quantity
+        FROM inventory inv
+        JOIN item i ON inv.item_id = i.item_id
+        WHERE inv.merch_id = %s
+    """, (player_id,))
+    player_items = cursor.fetchall()
 
     cursor.close()
     db.close()
-    return render_template('trade.html', merchant=merchant, items=items)
+
+    return render_template(
+        'trade.html',
+        merchant=merchant,
+        items=merchant_items,
+        player=player,
+        player_items=player_items,
+        error=request.args.get('error')    # grab any error
+    )
   
 @app.route('/trade/<int:merch_id>/transaction', methods=['POST'])
 def buy(merch_id):
