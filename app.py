@@ -14,8 +14,10 @@ app.secret_key = 'your_secret_key_here'  # use a strong secret in production!
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+
 # Routes to exclude from session check
 SESSION_EXEMPT_ROUTES = {'welcome', 'reset_session', 'static'}
+
 
 @app.before_request
 def ensure_player_session():
@@ -29,12 +31,14 @@ def ensure_player_session():
     if 'player_name' not in session or 'player_merch_id' not in session:
         flash("Session expired. Please enter your name again.")
         return redirect(url_for('welcome'))
-    
+
+
 # Route to reset session in case of access denied issues
 @app.route('/reset')
 def reset_session():
     session.clear()
     return redirect(url_for('welcome'))
+
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
@@ -103,7 +107,6 @@ def map():
 
     return render_template('map.html', cities=cities, player=session.get('player_name'))
 
-
 @app.route('/trade/<int:merch_id>')
 def trade(merch_id):
     db = get_db_connection()
@@ -126,6 +129,120 @@ def trade(merch_id):
     cursor.close()
     db.close()
     return render_template('trade.html', merchant=merchant, items=items)
+
+@app.route('/trade/<int:merch_id>/transaction', methods=['POST'])
+def buy(merch_id):
+    error = None
+    player_merch_id = session.get('player_merch_id')
+    if player_merch_id is None:
+        return redirect(url_for('welcome'))
+    try:
+        # Item id of the item to be bought
+        item_id = int(request.form['item_id'])
+        # Amount of items in inventory
+        item_stock = int(request.form['item_stock'])
+        # Amount of items to be bought or sold
+        quantity = int(request.form['quantity'])
+        # Cost of the item
+        buy_sell_amt = float(request.form['buy_sell_amt'])
+        # Player's balance
+        player_balance = float(request.form['player_balance'])
+        # Merchant's balance
+        merchant_balance = float(request.form['merchant_balance'])
+        # action
+        action = request.form['action']
+    except (ValueError, KeyError):
+        print("Invalid form data received.")
+        return redirect(url_for('trade', merch_id=merch_id))
+
+    total_buy_sell_amt: float = buy_sell_amt * quantity
+    
+    if action == 'buy':
+        if total_buy_sell_amt > player_balance:
+            error = 'Insufficient funds'
+    elif action == 'sell':
+        if total_buy_sell_amt > merchant_balance:
+            error = 'Merchant has insufficient funds'
+            
+    if quantity > item_stock:
+        error = 'Not enough items in inventory'
+    elif quantity <= 0:
+        error = 'Invalid quantity'
+        
+    if action == 'buy' and error is None:
+        db = get_db_connection()
+        cursor = db.cursor()
+        if error is None:
+            # Update player's balance
+            cursor.execute("""
+                           UPDATE merchant
+                           SET balance = %s
+                           WHERE merch_id = %s
+                           """, (player_balance - total_buy_sell_amt, player_merch_id))
+            # Update merchant's balance
+            cursor.execute("""
+                           UPDATE merchant
+                           SET balance = %s
+                           WHERE merch_id = %s
+                           """, (merchant_balance + total_buy_sell_amt, merch_id))
+            # Update inventory
+            if quantity == item_stock:
+                cursor.execute("""
+                               UPDATE inventory SET merch_id = %s
+                               WHERE merch_id = %s AND item_id = %s
+                               """, (player_merch_id, merch_id, item_id))
+            else:
+                cursor.execute("""
+                               UPDATE inventory SET quantity = quantity - %s
+                               WHERE merch_id = %s AND item_id = %s
+                               """, (quantity, merch_id, item_id))
+                cursor.execute("""
+                               INSERT INTO inventory (merch_id, item_id, quantity)
+                               VALUES (%s, %s, %s)
+                               ON DUPLICATE KEY UPDATE quantity = quantity + %s
+                               """, (player_merch_id, item_id, quantity, quantity))
+            db.commit()
+            cursor.close()
+            db.close()
+        
+        if action == 'sell' and error is None:
+            db = get_db_connection()
+            cursor = db.cursor()
+            # Update player's balance
+            cursor.execute("""
+                           UPDATE merchant
+                           SET balance = %s
+                           WHERE merch_id = %s
+                           """, (player_balance + total_buy_sell_amt, player_merch_id))
+            # Update merchant's balance
+            cursor.execute("""
+                           UPDATE merchant
+                           SET balance = %s
+                           WHERE merch_id = %s
+                           """, (merchant_balance - total_buy_sell_amt, merch_id))
+            # Update inventory
+            if quantity == item_stock:
+                cursor.execute("""
+                               UPDATE inventory SET merch_id = %s
+                               WHERE merch_id = %s AND item_id = %s
+                               """, (merch_id, player_merch_id, item_id))
+            else:
+                cursor.execute("""
+                               UPDATE inventory SET quantity = quantity + %s
+                               WHERE merch_id = %s AND item_id = %s
+                               """, (quantity, merch_id, item_id))
+                cursor.execute("""
+                               INSERT INTO inventory (merch_id, item_id, quantity)
+                               VALUES (%s, %s, %s)
+                               ON DUPLICATE KEY UPDATE quantity = quantity - %s
+                               """, (player_merch_id, item_id, quantity, quantity))
+            db.commit()
+            cursor.close()
+            db.close()
+    
+    print(f"[MODIFY] merch_id={merch_id}, item_id={item_id}, quantity={quantity}, total_buy_sell_amt={total_buy_sell_amt}, update_balance={player_balance - total_buy_sell_amt}")
+        
+    return redirect(url_for('trade', merch_id=merch_id, error=error))
 
 @app.route('/player/inventory', methods=['GET', 'POST'])
 def player_inventory():
