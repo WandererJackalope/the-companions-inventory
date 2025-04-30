@@ -4,8 +4,8 @@
     <title>Trade with {{ merchant.name }}</title>
 </head>
 <body>
-    <a href="{{ url_for('map') }}">
-        <button style="margin-bottom: 15px;"> ⬅ Back to Map</button>
+    <a href="{{ url_for('city', location=merchant.location) }}">
+        <button style="margin-bottom: 15px;"> ⬅ Back to {{ merchant.location }}</button>
     </a>
 
     <h2>{{ merchant.name }} — Level {{ merchant.level }}</h2>
