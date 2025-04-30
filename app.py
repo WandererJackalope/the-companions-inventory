@@ -295,10 +295,77 @@ def merchants_list():
     cursor.execute("SELECT * FROM merchant WHERE category != 'player'")
     merchants = cursor.fetchall()
 
+    # Get all locations from database
+    cursor.execute("""
+        SELECT DISTINCT location FROM merchant 
+        WHERE location != 'PlayerSpawn'
+    """)
+    locations = cursor.fetchall()
+
+    # Get all categories from database
+    cursor.execute("""
+        SELECT DISTINCT category FROM merchant 
+        WHERE category != 'player'
+    """)
+    categories = cursor.fetchall()
+
     cursor.close()
     db.close()
 
-    return render_template('merchants-list.html', player=player, merchants=merchants)
+    return render_template('merchants-list.html', player=player, merchants=merchants, locations=locations, categories=categories)
+
+@app.route('/merchants/list/add_merchant', methods=['POST'])
+def add_merchant():
+    try:
+        # Check if form values are valid
+        name = request.form['name'].strip()
+        if not name:
+            raise ValueError("Name cannot be empty.")
+        
+        level = int(request.form['level'])
+        if not (1 <= level <= 10):
+            raise ValueError("Level must be between 1 and 10")
+
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+
+        # Check if merchant name already exists
+        cursor.execute("""
+            SELECT merch_id FROM merchant 
+            WHERE name = %s AND category != 'player'
+        """, (name,))
+        existing_merchant = cursor.fetchone()
+        if existing_merchant:
+            raise ValueError("Merchant with that name already exists.")
+        
+        # If merchant does not exist, generate a new merch_id
+        cursor.execute("SELECT MAX(merch_id) AS max_id FROM merchant")
+        result = cursor.fetchone()
+        merch_id = (result['max_id'] or 0) + 1
+
+        location = request.form['location']
+        category = request.form['category']
+        hr_open = request.form['hr_open']
+        hr_close = request.form['hr_close']
+
+        # Insert new merchant with values from form and default balance
+        cursor.execute("""
+            INSERT INTO merchant (merch_id, name, level, location, category, balance, hr_open, hr_close)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (merch_id, name, level, location, category, 1000.0, hr_open, hr_close))
+
+        db.commit()
+        flash("Merchant added successfully.", "error")
+        
+    except KeyError as e:
+        flash(f"Missing form field: {e.args[0]}", "error")
+    except ValueError as e:
+        flash(str(e), "error")
+    finally:
+        cursor.close()
+        db.close()
+
+    return redirect(url_for('merchants_list'))
 
 @app.route('/merchant/<int:merch_id>')
 def merchant_inventory(merch_id):
@@ -325,7 +392,7 @@ def merchant_inventory(merch_id):
 
     cursor.close()
     db.close()
-    return render_template('merchant.html', merchant=merchant, items=items, all_items=all_items)
+    return render_template('merchant.html', merchant=merchant, items=items,  all_items=all_items)
 
 @app.route('/merchant/modify_inventory', methods=['POST'])
 def modify_merchant_inventory():
