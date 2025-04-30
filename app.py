@@ -355,7 +355,7 @@ def add_merchant():
         """, (merch_id, name, level, location, category, 1000.0, hr_open, hr_close))
 
         db.commit()
-        flash("Merchant added successfully.", "error")
+        flash("Merchant added successfully.", "success")
         
     except KeyError as e:
         flash(f"Missing form field: {e.args[0]}", "error")
