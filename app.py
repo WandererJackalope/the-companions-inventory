@@ -172,38 +172,37 @@ def buy(merch_id):
     if action == 'buy' and error is None:
         db = get_db_connection()
         cursor = db.cursor()
-        if error is None:
-            # Update player's balance
+        # Update player's balance
+        cursor.execute("""
+                       UPDATE merchant
+                       SET balance = %s
+                       WHERE merch_id = %s
+                       """, (player_balance - total_buy_sell_amt, player_merch_id))
+        # Update merchant's balance
+        cursor.execute("""
+                       UPDATE merchant
+                       SET balance = %s
+                       WHERE merch_id = %s
+                       """, (merchant_balance + total_buy_sell_amt, merch_id))
+        # Update inventory
+        if quantity == item_stock:
             cursor.execute("""
-                           UPDATE merchant
-                           SET balance = %s
-                           WHERE merch_id = %s
-                           """, (player_balance - total_buy_sell_amt, player_merch_id))
-            # Update merchant's balance
+                           UPDATE inventory SET merch_id = %s
+                           WHERE merch_id = %s AND item_id = %s
+                           """, (player_merch_id, merch_id, item_id))
+        else:
             cursor.execute("""
-                           UPDATE merchant
-                           SET balance = %s
-                           WHERE merch_id = %s
-                           """, (merchant_balance + total_buy_sell_amt, merch_id))
-            # Update inventory
-            if quantity == item_stock:
-                cursor.execute("""
-                               UPDATE inventory SET merch_id = %s
-                               WHERE merch_id = %s AND item_id = %s
-                               """, (player_merch_id, merch_id, item_id))
-            else:
-                cursor.execute("""
-                               UPDATE inventory SET quantity = quantity - %s
-                               WHERE merch_id = %s AND item_id = %s
-                               """, (quantity, merch_id, item_id))
-                cursor.execute("""
-                               INSERT INTO inventory (merch_id, item_id, quantity)
-                               VALUES (%s, %s, %s)
-                               ON DUPLICATE KEY UPDATE quantity = quantity + %s
-                               """, (player_merch_id, item_id, quantity, quantity))
-            db.commit()
-            cursor.close()
-            db.close()
+                           UPDATE inventory SET quantity = quantity - %s
+                           WHERE merch_id = %s AND item_id = %s
+                           """, (quantity, merch_id, item_id))
+            cursor.execute("""
+                           INSERT INTO inventory (merch_id, item_id, quantity)
+                           VALUES (%s, %s, %s)
+                           ON DUPLICATE KEY UPDATE quantity = quantity + %s
+                           """, (player_merch_id, item_id, quantity, quantity))
+        db.commit()
+        cursor.close()
+        db.close()
         
         if action == 'sell' and error is None:
             db = get_db_connection()
