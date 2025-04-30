@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import mysql.connector
 from dotenv import load_dotenv
@@ -242,13 +244,6 @@ def buy(merch_id):
     logging.info(f"[MODIFY] merch_id={merch_id}, item_id={item_id}, quantity={quantity}, total_buy_sell_amt={total_buy_sell_amt}, update_balance={player_balance - total_buy_sell_amt}")
         
     return redirect(url_for('trade', merch_id=merch_id, error=error))
-
-@app.route('/player/inventory', methods=['GET', 'POST'])
-def player_inventory():
-    merch_id = session.get('player_merch_id')
-    if merch_id is None:
-        return redirect(url_for('welcome'))
-      
 @app.route('/city/<location>')
 def city(location):
     db = get_db_connection()
