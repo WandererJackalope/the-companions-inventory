@@ -239,7 +239,7 @@ def buy(merch_id):
             cursor.close()
             db.close()
     
-    print(f"[MODIFY] merch_id={merch_id}, item_id={item_id}, quantity={quantity}, total_buy_sell_amt={total_buy_sell_amt}, update_balance={player_balance - total_buy_sell_amt}")
+    logging.info(f"[MODIFY] merch_id={merch_id}, item_id={item_id}, quantity={quantity}, total_buy_sell_amt={total_buy_sell_amt}, update_balance={player_balance - total_buy_sell_amt}")
         
     return redirect(url_for('trade', merch_id=merch_id, error=error))
 
