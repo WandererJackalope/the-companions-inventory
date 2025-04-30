@@ -129,7 +129,7 @@ def trade(merch_id):
     cursor.close()
     db.close()
     return render_template('trade.html', merchant=merchant, items=items)
-
+  
 @app.route('/trade/<int:merch_id>/transaction', methods=['POST'])
 def buy(merch_id):
     error = None
@@ -248,17 +248,53 @@ def player_inventory():
     merch_id = session.get('player_merch_id')
     if merch_id is None:
         return redirect(url_for('welcome'))
-
+      
+@app.route('/city/<location>')
+def city(location):
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
 
-    # Get player merchant row
+    # Get all merchants from this location
+    cursor.execute("SELECT * FROM merchant WHERE location = %s", (location,))
+    merchants = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+    return render_template('city.html', location=location, merchants=merchants)
+
+@app.route('/merchants/list/')
+def merchants_list():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    # Get player merchant info from database
+    player_merch_id = session.get('player_merch_id')
+    player = None
+    if player_merch_id:
+        cursor.execute("SELECT * FROM merchant WHERE merch_id = %s", (player_merch_id,))
+        player = cursor.fetchone()
+
+    # Get all npc merchants from database
+    cursor.execute("SELECT * FROM merchant WHERE category != 'player'")
+    merchants = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    return render_template('merchants-list.html', player=player, merchants=merchants)
+
+@app.route('/merchant/<int:merch_id>')
+def merchant_inventory(merch_id):
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    # Get merchant info
     cursor.execute("SELECT * FROM merchant WHERE merch_id = %s", (merch_id,))
     merchant = cursor.fetchone()
 
-    # Get player's inventory
+    # Get merchant's inventory + item details
     cursor.execute("""
-        SELECT i.item_id, i.name, i.description, i.buy_cost, i.sell_price, i.weight,
+        SELECT i.item_id, i.name, i.description, i.buy_cost, i.sell_price, i.weight, 
                i.rarity, i.effect_type, i.effect_value, inv.quantity
         FROM inventory inv
         JOIN item i ON inv.item_id = i.item_id
@@ -266,19 +302,19 @@ def player_inventory():
     """, (merch_id,))
     items = cursor.fetchall()
 
+    # Get all the unique items from database
     cursor.execute("SELECT item_id, name FROM item")
     all_items = cursor.fetchall()
 
     cursor.close()
     db.close()
+    return render_template('merchant.html', merchant=merchant, items=items, all_items=all_items)
 
-    return render_template('player.html', merchant=merchant, items=items, all_items=all_items)
-
-@app.route('/player/modify_inventory', methods=['POST'])
-def modify_inventory():
-    merch_id = session.get('player_merch_id')
+@app.route('/merchant/modify_inventory', methods=['POST'])
+def modify_merchant_inventory():
+    merch_id = request.form.get('merch_id')
     if merch_id is None:
-        return redirect(url_for('welcome'))
+        return redirect(url_for('merchants_list'))
 
     try:
         item_id = int(request.form['item_id'])
@@ -286,7 +322,7 @@ def modify_inventory():
         action = request.form['action']
     except (ValueError, KeyError):
         print("Invalid form data received.")
-        return redirect(url_for('player_inventory'))
+        return redirect(url_for('merchant_inventory', merch_id=merch_id))
 
     print(f"[MODIFY] merch_id={merch_id}, item_id={item_id}, quantity={quantity}, action={action}")
 
@@ -323,22 +359,61 @@ def modify_inventory():
     cursor.close()
     db.close()
 
-    return redirect(url_for('player_inventory'))
+    return redirect(url_for('merchant_inventory', merch_id=merch_id))
 
-
-@app.route('/city/<location>')
-def city(location):
+@app.route('/merchant/adjust_balance', methods=['POST'])
+def adjust_balance():
+    merch_id = request.form.get('merch_id')
+    if merch_id is None:
+        return redirect(url_for('merchants_list'))
+    
+    try:
+        merch_id = int(request.form['merch_id'])
+        amount = float(request.form['amount'])
+        action = request.form['action']
+    except (ValueError, KeyError):
+        print("Invalid form data received.")
+        return redirect(url_for('merchants_list'))
+    
+    print(f"[BALANCE ADJUST] merch_id={merch_id}, amount={amount}, action={action}")
+    
+    if amount < 0:
+        flash("Amount cannot be negative.")
+        return redirect(url_for('merchant_inventory', merch_id=merch_id))
+    
     db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor()
 
-    # Get all merchants from this location
-    cursor.execute("SELECT * FROM merchant WHERE location = %s", (location,))
-    merchants = cursor.fetchall()
+    if action == 'increase':
+        cursor.execute("""
+            UPDATE merchant SET balance = balance + %s
+            WHERE merch_id = %s             
+        """, (amount, merch_id))
+    elif action == 'decrease':
+        cursor.execute("""
+            SELECT balance FROM merchant WHERE merch_id = %s
+        """, (merch_id,))
+        result = cursor.fetchone()
 
+        if result:
+            current_balance = result[0]
+            if current_balance >= amount:
+                cursor.execute("""
+                    UPDATE merchant SET balance = balance - %s
+                    WHERE merch_id = %s             
+                """, (amount, merch_id))
+            else:
+                flash(f"Cannot decrease by ${amount: .2f}. Merchant only has ${current_balance:.2f}")
+                return redirect(url_for('merchant_inventory', merch_id=merch_id))
+        else:
+            flash("Merchant not found.")
+            return redirect(url_for('merchants_list'))
+    
+    db.commit()
     cursor.close()
     db.close()
-    return render_template('city.html', location=location, merchants=merchants)
 
+    return redirect(url_for('merchant_inventory', merch_id=merch_id))
 
 if __name__ == '__main__':
     app.run(debug=True)

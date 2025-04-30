@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ merchant.name }}'s Inventory</title>
+
+    <style>
+        .flashes {
+            list-style-type: none;
+            padding: 0;
+            margin-bottom: 1em;
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="{{ url_for('merchants_list') }}">
+        <button style="margin-bottom: 15px;">⬅ Back to Merchants Hub</button>
+    </a>
+
+    <h3>Modify {{ merchant.name }}'s Inventory</h3>
+    <form method="POST" action="{{ url_for('modify_merchant_inventory') }}">
+        <input type="hidden" name="merch_id" value="{{ merchant.merch_id }}">
+        <label for="item_id">Item:</label>
+        <select name="item_id">
+            {% for i in all_items %}
+            <option value="{{ i.item_id }}">{{ i.name }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="quantity">Qty:</label>
+        <input type="number" name="quantity" min="1" value="1" required>
+    
+        <button type="submit" name="action" value="add">Add</button>
+        <button type="submit" name="action" value="remove">Remove</button>
+    </form>
+
+    <h3>Adjust Balance</h3>
+    <form method="POST" action="{{ url_for('adjust_balance') }}">
+        <input type="hidden" name="merch_id" value="{{ merchant.merch_id }}">
+    
+        <label for="amount">Amount:</label>
+        <input type="number" name="amount" step="0.01" value="0.00" required>
+    
+        <button type="submit" name="action" value="increase">Increase</button>
+        <button type="submit" name="action" value="decrease">Decrease</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <hr>
+
+    <h2>{{ merchant.name }} — Level {{ merchant.level }}</h2>
+    <p>Balance: ${{ merchant.balance }}</p>
+
+    <div class="inventory">
+        {% for item in items %}
+        <div class="item-card">
+            <h3>{{ item.name }} (x{{ item.quantity }})</h3>
+            <p>{{ item.description }}</p>
+            <ul>
+                <li>Weight: {{ item.weight }}</li>
+                <li>Rarity: {{ item.rarity }}</li>
+                <li>Effect: {{ item.effect_type }} ({{ item.effect_value }})</li>
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+
+</body>
+
+</html>
