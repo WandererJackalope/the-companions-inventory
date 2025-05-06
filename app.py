@@ -71,7 +71,7 @@ def welcome():
             cursor.execute("""
                 INSERT INTO merchant (merch_id, name, level, location, category, balance, hr_open, hr_close)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (player_merch_id, player_name, 1, 'PlayerSpawn', 'player', 100, '00:00', '23:59'))
+            """, (player_merch_id, player_name, 1, 'PlayerSpawn', 'player', 2000, '00:00', '23:59'))
 
             # Add starter inventory
             starter_items = [(101, 1), (102, 1)]  # Example: item_id 1 and 3
@@ -160,112 +160,110 @@ def buy(merch_id):
     player_merch_id = session.get('player_merch_id')
     if player_merch_id is None:
         return redirect(url_for('welcome'))
+
     try:
-        # Item id of the item to be bought
         item_id = int(request.form['item_id'])
-        # Amount of items in inventory
         item_stock = int(request.form['item_stock'])
-        # Amount of items to be bought or sold
         quantity = int(request.form['quantity'])
-        # Cost of the item
         buy_sell_amt = float(request.form['buy_sell_amt'])
-        # Player's balance
         player_balance = float(request.form['player_balance'])
-        # Merchant's balance
         merchant_balance = float(request.form['merchant_balance'])
-        # action
         action = request.form['action']
     except (ValueError, KeyError):
         print("Invalid form data received.")
         return redirect(url_for('trade', merch_id=merch_id))
 
-    total_buy_sell_amt: float = buy_sell_amt * quantity
-    
-    if action == 'buy':
-        if total_buy_sell_amt > player_balance:
-            error = 'Insufficient funds'
-    elif action == 'sell':
-        if total_buy_sell_amt > merchant_balance:
-            error = 'Merchant has insufficient funds'
-            
-    if quantity > item_stock:
-        error = 'Not enough items in inventory'
-    elif quantity <= 0:
+    total_amount = buy_sell_amt * quantity
+
+    if quantity <= 0:
         error = 'Invalid quantity'
-        
+    elif quantity > item_stock:
+        error = 'Not enough items in inventory'
+
     if action == 'buy' and error is None:
-        db = get_db_connection()
-        cursor = db.cursor()
-        # Update player's balance
-        cursor.execute("""
-                       UPDATE merchant
-                       SET balance = %s
-                       WHERE merch_id = %s
-                       """, (player_balance - total_buy_sell_amt, player_merch_id))
-        # Update merchant's balance
-        cursor.execute("""
-                       UPDATE merchant
-                       SET balance = %s
-                       WHERE merch_id = %s
-                       """, (merchant_balance + total_buy_sell_amt, merch_id))
-        # Update inventory
-        if quantity == item_stock:
-            cursor.execute("""
-                           UPDATE inventory SET merch_id = %s
-                           WHERE merch_id = %s AND item_id = %s
-                           """, (player_merch_id, merch_id, item_id))
-        else:
-            cursor.execute("""
-                           UPDATE inventory SET quantity = quantity - %s
-                           WHERE merch_id = %s AND item_id = %s
-                           """, (quantity, merch_id, item_id))
-            cursor.execute("""
-                           INSERT INTO inventory (merch_id, item_id, quantity)
-                           VALUES (%s, %s, %s)
-                           ON DUPLICATE KEY UPDATE quantity = quantity + %s
-                           """, (player_merch_id, item_id, quantity, quantity))
-        db.commit()
-        cursor.close()
-        db.close()
-        
-        if action == 'sell' and error is None:
+        if total_amount > player_balance:
+            error = 'Insufficient funds'
+
+        if error is None:
             db = get_db_connection()
             cursor = db.cursor()
-            # Update player's balance
-            cursor.execute("""
-                           UPDATE merchant
-                           SET balance = %s
-                           WHERE merch_id = %s
-                           """, (player_balance + total_buy_sell_amt, player_merch_id))
-            # Update merchant's balance
-            cursor.execute("""
-                           UPDATE merchant
-                           SET balance = %s
-                           WHERE merch_id = %s
-                           """, (merchant_balance - total_buy_sell_amt, merch_id))
-            # Update inventory
-            if quantity == item_stock:
+
+            try:
+                # Update balances
+                cursor.execute("UPDATE merchant SET balance = balance - %s WHERE merch_id = %s",
+                               (total_amount, player_merch_id))
+                cursor.execute("UPDATE merchant SET balance = balance + %s WHERE merch_id = %s",
+                               (total_amount, merch_id))
+
+                # Transfer inventory from merchant to player
+                if quantity == item_stock:
+                    cursor.execute("""
+                        UPDATE inventory SET merch_id = %s 
+                        WHERE merch_id = %s AND item_id = %s
+                    """, (player_merch_id, merch_id, item_id))
+                else:
+                    cursor.execute("""
+                        UPDATE inventory SET quantity = quantity - %s 
+                        WHERE merch_id = %s AND item_id = %s
+                    """, (quantity, merch_id, item_id))
+
+                    cursor.execute("""
+                        INSERT INTO inventory (merch_id, item_id, quantity)
+                        VALUES (%s, %s, %s)
+                        ON DUPLICATE KEY UPDATE quantity = quantity + %s
+                    """, (player_merch_id, item_id, quantity, quantity))
+
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                raise e
+            finally:
+                cursor.close()
+                db.close()
+
+    elif action == 'sell' and error is None:
+        if total_amount > merchant_balance:
+            error = 'Merchant has insufficient funds'
+
+        if error is None:
+            db = get_db_connection()
+            cursor = db.cursor()
+
+            try:
+                # Update balances
+                cursor.execute("UPDATE merchant SET balance = balance + %s WHERE merch_id = %s",
+                               (total_amount, player_merch_id))
+                cursor.execute("UPDATE merchant SET balance = balance - %s WHERE merch_id = %s",
+                               (total_amount, merch_id))
+
+                # Remove from player inventory
+                if quantity == item_stock:
+                    cursor.execute("""
+                        DELETE FROM inventory WHERE merch_id = %s AND item_id = %s
+                    """, (player_merch_id, item_id))
+                else:
+                    cursor.execute("""
+                        UPDATE inventory SET quantity = quantity - %s 
+                        WHERE merch_id = %s AND item_id = %s
+                    """, (quantity, player_merch_id, item_id))
+
+                # Add to merchant inventory
                 cursor.execute("""
-                               UPDATE inventory SET merch_id = %s
-                               WHERE merch_id = %s AND item_id = %s
-                               """, (merch_id, player_merch_id, item_id))
-            else:
-                cursor.execute("""
-                               UPDATE inventory SET quantity = quantity + %s
-                               WHERE merch_id = %s AND item_id = %s
-                               """, (quantity, merch_id, item_id))
-                cursor.execute("""
-                               INSERT INTO inventory (merch_id, item_id, quantity)
-                               VALUES (%s, %s, %s)
-                               ON DUPLICATE KEY UPDATE quantity = quantity - %s
-                               """, (player_merch_id, item_id, quantity, quantity))
-            db.commit()
-            cursor.close()
-            db.close()
-    
-    logging.info(f"[MODIFY] merch_id={merch_id}, item_id={item_id}, quantity={quantity}, total_buy_sell_amt={total_buy_sell_amt}, update_balance={player_balance - total_buy_sell_amt}")
-        
+                    INSERT INTO inventory (merch_id, item_id, quantity)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE quantity = quantity + %s
+                """, (merch_id, item_id, quantity, quantity))
+
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                raise e
+            finally:
+                cursor.close()
+                db.close()
+
     return redirect(url_for('trade', merch_id=merch_id, error=error))
+
 @app.route('/city/<location>')
 def city(location):
     db = get_db_connection()

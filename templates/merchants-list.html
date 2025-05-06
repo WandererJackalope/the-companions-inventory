@@ -95,15 +95,20 @@
     {% endif %}
     
     <h2>Merchants</h2>
-    <ul>
+    <ul style="list-style-type: none; padding: 0;">
         {% for merchant in merchants %}
-        <li>
-            <a href="{{ url_for('merchant_inventory', merch_id=merchant.merch_id) }}">
+        <li style="margin-bottom: 10px;">
+            <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
+                alt="{{ merchant.name }}" width="64" height="64"
+                style="vertical-align: middle; border-radius: 8px;"
+                onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
+            <a href="{{ url_for('merchant_inventory', merch_id=merchant.merch_id) }}" style="margin-left: 10px;">
                 {{ merchant.name }} (Level {{ merchant.level }})
             </a>
         </li>
         {% endfor %}
     </ul>
+
 
 </body>
 

@@ -2,15 +2,46 @@
 <html lang="en-US">
 <head>
     <title>Merchants in {{ location }}</title>
+    <style>
+        ul.merchant-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        ul.merchant-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        ul.merchant-list img {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+
+        ul.merchant-list a {
+            font-size: 1.1em;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <a href="{{ url_for('map') }}"><button>⬅ Back to Map</button></a>
+    <a href="{{ url_for('map') }}">
+        <button>⬅ Back to Map</button>
+    </a>
+
     <h1>Merchants in {{ location }}</h1>
 
     {% if merchants %}
-        <ul>
+        <ul class="merchant-list">
             {% for merchant in merchants %}
                 <li>
+                    <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
+                        alt="{{ merchant.name }}"
+                        onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
+
                     <a href="{{ url_for('trade', merch_id=merchant.merch_id) }}">
                         {{ merchant.name }} (Level {{ merchant.level }})
                     </a>

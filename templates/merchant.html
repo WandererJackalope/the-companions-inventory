@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>{{ merchant.name }}'s Inventory</title>
-
     <style>
         .flashes {
             list-style-type: none;
@@ -14,7 +12,6 @@
         }
     </style>
 </head>
-
 <body>
     <a href="{{ url_for('merchants_list') }}">
         <button style="margin-bottom: 15px;">⬅ Back to Merchants Hub</button>
@@ -29,10 +26,8 @@
             <option value="{{ i.item_id }}">{{ i.name }}</option>
             {% endfor %}
         </select>
-    
         <label for="quantity">Qty:</label>
         <input type="number" name="quantity" min="1" value="1" required>
-    
         <button type="submit" name="action" value="add">Add</button>
         <button type="submit" name="action" value="remove">Remove</button>
     </form>
@@ -59,12 +54,20 @@
     {% endwith %}
     <hr>
 
+    <!-- Merchant Image -->
+    <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
+         alt="{{ merchant.name }}" width="100" height="100"
+         onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
+
     <h2>{{ merchant.name }} — Level {{ merchant.level }}</h2>
     <p>Balance: ${{ merchant.balance }}</p>
 
     <div class="inventory">
         {% for item in items %}
         <div class="item-card">
+            <img src="{{ url_for('static', filename='img/items/' ~ item.item_id ~ '.png') }}"
+                 alt="{{ item.name }}" width="64" height="64"
+                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/items/default.png') }}';">
             <h3>{{ item.name }} (x{{ item.quantity }})</h3>
             <p>{{ item.description }}</p>
             <ul>

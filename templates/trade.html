@@ -2,19 +2,53 @@
 <html lang="en-US">
 <head>
     <title>Trade with {{ merchant.name }}</title>
+    <style>
+        .inventory {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .item-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 200px;
+            box-sizing: border-box;
+        }
+
+        .item-card img {
+            display: block;
+            margin: 0 auto 10px;
+        }
+
+        form {
+            margin-top: 8px;
+        }
+    </style>
 </head>
 <body>
+
     <a href="{{ url_for('city', location=merchant.location) }}">
-        <button style="margin-bottom: 15px;"> ⬅ Back to {{ merchant.location }}</button>
+        <button style="margin-bottom: 15px;">⬅ Back to {{ merchant.location }}</button>
     </a>
+
+    <!-- Merchant Info -->
+    <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
+         alt="{{ merchant.name }}" width="100" height="100"
+         onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
 
     <h2>{{ merchant.name }} — Level {{ merchant.level }}</h2>
     <p>Location: {{ merchant.location }} | Category: {{ merchant.category }}</p>
     <p>Open: {{ merchant.hr_open }} - {{ merchant.hr_close }} | Balance: ${{ merchant.balance }}</p>
 
+    <hr>
+    <h2>Items for Sale</h2>
     <div class="inventory">
         {% for item in items %}
             <div class="item-card">
+                <img src="{{ url_for('static', filename='img/items/' ~ item.item_id ~ '.png') }}"
+                     alt="{{ item.name }}" width="64" height="64"
+                     onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/items/default.png') }}';">
                 <h3>{{ item.name }} (x{{ item.quantity }})</h3>
                 <p>{{ item.description }}</p>
                 <ul>
@@ -24,6 +58,47 @@
                     <li>Rarity: {{ item.rarity }}</li>
                     <li>Effect: {{ item.effect_type }} ({{ item.effect_value }})</li>
                 </ul>
+
+                <form method="POST" action="{{ url_for('buy', merch_id=merchant.merch_id) }}">
+                    <input type="hidden" name="item_id" value="{{ item.item_id }}">
+                    <input type="hidden" name="item_stock" value="{{ item.quantity }}">
+                    <input type="hidden" name="buy_sell_amt" value="{{ item.buy_cost }}">
+                    <input type="hidden" name="player_balance" value="{{ player.balance }}">
+                    <input type="hidden" name="merchant_balance" value="{{ merchant.balance }}">
+                    <input type="number" name="quantity" min="1" max="{{ item.quantity }}" value="1" required>
+                    <button type="submit" name="action" value="buy">Buy</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+
+    <hr>
+    <h2>Your Inventory</h2>
+    <p>Your Balance: ${{ player.balance }}</p>
+    <div class="inventory">
+        {% for item in player_items %}
+            <div class="item-card">
+                <img src="{{ url_for('static', filename='img/items/' ~ item.item_id ~ '.png') }}"
+                     alt="{{ item.name }}" width="64" height="64"
+                     onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/items/default.png') }}';">
+                <h3>{{ item.name }} (x{{ item.quantity }})</h3>
+                <p>{{ item.description }}</p>
+                <ul>
+                    <li>Sell: ${{ item.sell_price }}</li>
+                    <li>Weight: {{ item.weight }}</li>
+                    <li>Rarity: {{ item.rarity }}</li>
+                    <li>Effect: {{ item.effect_type }} ({{ item.effect_value }})</li>
+                </ul>
+
+                <form method="POST" action="{{ url_for('buy', merch_id=merchant.merch_id) }}">
+                    <input type="hidden" name="item_id" value="{{ item.item_id }}">
+                    <input type="hidden" name="item_stock" value="{{ item.quantity }}">
+                    <input type="hidden" name="buy_sell_amt" value="{{ item.sell_price }}">
+                    <input type="hidden" name="player_balance" value="{{ player.balance }}">
+                    <input type="hidden" name="merchant_balance" value="{{ merchant.balance }}">
+                    <input type="number" name="quantity" min="1" max="{{ item.quantity }}" value="1" required>
+                    <button type="submit" name="action" value="sell">Sell</button>
+                </form>
             </div>
         {% endfor %}
     </div>
