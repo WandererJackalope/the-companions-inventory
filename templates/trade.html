@@ -1,19 +1,46 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+    <meta charset="UTF-8">
     <title>Trade with {{ merchant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
     <style>
+        body {
+            background-color: #1b3a1b;
+            color: #f5f5f5;
+            font-family: 'MedievalSharp', serif;
+            padding: 20px;
+            text-align: center;
+        }
+
+        a button {
+            margin-bottom: 15px;
+            background-color: #3a613a;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        a button:hover {
+            background-color: #4a7a4a;
+        }
+
         .inventory {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
+            justify-content: center;
         }
 
         .item-card {
+            background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid #ccc;
-            padding: 10px;
-            width: 200px;
-            box-sizing: border-box;
+            padding: 15px;
+            width: 220px;
+            border-radius: 10px;
         }
 
         .item-card img {
@@ -22,18 +49,49 @@
         }
 
         form {
-            margin-top: 8px;
+            margin-top: 10px;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+        }
+
+        button {
+            background-color: #3a613a;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        button:hover {
+            background-color: #4a7a4a;
+        }
+
+        hr {
+            margin: 30px 0;
+        }
+
+        img.merchant-img {
+            border-radius: 8px;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
 
     <a href="{{ url_for('city', location=merchant.location) }}">
-        <button style="margin-bottom: 15px;">⬅ Back to {{ merchant.location }}</button>
+        <button>⬅ Back to {{ merchant.location }}</button>
     </a>
 
     <!-- Merchant Info -->
-    <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
+    <img class="merchant-img" src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
          alt="{{ merchant.name }}" width="100" height="100"
          onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
 

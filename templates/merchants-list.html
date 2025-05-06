@@ -1,10 +1,57 @@
 <!DOCTYPE html>
 <html lang="en-US">
-
 <head>
     <title>Merchants Hub</title>
-
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
     <style>
+        body {
+            background-color: #1b3a1b;
+            color: #f5f5f5;
+            font-family: 'MedievalSharp', serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            margin-top: 20px;
+        }
+
+        form {
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, select {
+            padding: 6px;
+            font-size: 14px;
+            margin-top: 5px;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        button {
+            margin-top: 15px;
+            background-color: #3a613a;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #4a7a4a;
+        }
+
         .flashes {
             list-style-type: none;
             padding: 0;
@@ -17,62 +64,80 @@
         }
 
         .flashes .success {
-            color: green;
+            color: lightgreen;
+        }
+
+        ul.merchant-list {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        ul.merchant-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        ul.merchant-list img {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+
+        ul.merchant-list a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-size: 1.1em;
         }
     </style>
-
 </head>
-
 <body>
     <a href="{{ url_for('map') }}"><button>⬅ Back to Map</button></a>
     <h1>Merchants Hub</h1>
 
-    <h3>Add a new merchant</h3>
+    <h3>Add a New Merchant</h3>
     <form action="{{ url_for('add_merchant') }}" method="post">
-        <!-- Merchant Name -->
         <label for="name">Name</label>
         <input type="text" id="name" name="name" required>
-    
-        <!-- Level (1–10) -->
+
         <label for="level">Level</label>
         <select id="level" name="level" required>
             {% for lvl in range(1, 11) %}
             <option value="{{ lvl }}">{{ lvl }}</option>
             {% endfor %}
         </select>
-    
-        <!-- Location (enum from DB) -->
+
         <label for="location">Location</label>
         <select id="location" name="location" required>
             {% for loc in locations %}
             <option value="{{ loc.location }}">{{ loc.location }}</option>
             {% endfor %}
         </select>
-    
-        <!-- Category (enum from DB) -->
+
         <label for="category">Category</label>
         <select id="category" name="category" required>
             {% for cat in categories %}
             <option value="{{ cat.category }}">{{ cat.category }}</option>
             {% endfor %}
         </select>
-    
-        <!-- Open Hour (TIME format HH:MM:SS) -->
+
         <label for="hr_open">Open Hour</label>
         <select id="hr_open" name="hr_open" required>
             {% for h in range(0, 24) %}
             <option value="{{ '%02d:00:00'|format(h) }}">{{ '%02d:00'|format(h) }}</option>
             {% endfor %}
         </select>
-    
-        <!-- Close Hour (TIME format HH:MM:SS) -->
+
         <label for="hr_close">Close Hour</label>
         <select id="hr_close" name="hr_close" required>
             {% for h in range(0, 24) %}
             <option value="{{ '%02d:00:00'|format(h) }}">{{ '%02d:00'|format(h) }}</option>
             {% endfor %}
         </select>
-    
+
         <button type="submit">Add Merchant</button>
     </form>
 
@@ -85,31 +150,30 @@
 
     {% if player %}
     <h2>Player</h2>
-    <ul>
+    <ul class="merchant-list">
         <li>
+            <img src="{{ url_for('static', filename='img/merchants/' ~ player.merch_id ~ '.png') }}"
+                 alt="{{ player.name }}" width="64" height="64"
+                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
             <a href="{{ url_for('merchant_inventory', merch_id=player.merch_id) }}">
                 {{ player.name }} (Level {{ player.level }})
             </a>
         </li>
     </ul>
     {% endif %}
-    
+
     <h2>Merchants</h2>
-    <ul style="list-style-type: none; padding: 0;">
+    <ul class="merchant-list">
         {% for merchant in merchants %}
-        <li style="margin-bottom: 10px;">
+        <li>
             <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
-                alt="{{ merchant.name }}" width="64" height="64"
-                style="vertical-align: middle; border-radius: 8px;"
-                onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
-            <a href="{{ url_for('merchant_inventory', merch_id=merchant.merch_id) }}" style="margin-left: 10px;">
+                 alt="{{ merchant.name }}" width="64" height="64"
+                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
+            <a href="{{ url_for('merchant_inventory', merch_id=merchant.merch_id) }}">
                 {{ merchant.name }} (Level {{ merchant.level }})
             </a>
         </li>
         {% endfor %}
     </ul>
-
-
 </body>
-
 </html>

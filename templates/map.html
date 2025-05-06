@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+    <meta charset="UTF-8">
     <title>Merchant Map</title>
-    {% if player %}
-        <p>Welcome, {{ player }}!</p>
-        <a href="{{ url_for('merchants_list') }}">
-            <button>Merchant Menu</button>
-        </a>
-    {% endif %}
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
+        body {
+            background-color: #1b3a1b;
+            color: #f5f5f5;
+            font-family: 'MedievalSharp', serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
         .map-container {
             position: relative;
             width: 100%;
@@ -33,7 +38,7 @@
             text-indent: -9999px;
             cursor: pointer;
         }
-        
+
         .city-pin:hover {
             background-color: rgba(255, 255, 255, 0.4);
             border-color: rgba(255, 255, 255, 0.6);
@@ -68,15 +73,35 @@
         }
 
         .city-pin.arrowheadpost {
-            top:20%;
+            top: 20%;
             left: 69%;
             width: 80px;
             height: 80px;
         }
-        
+
+        button {
+            background-color: #3a613a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'MedievalSharp', serif;
+        }
+
+        button:hover {
+            background-color: #4a7a4a;
+        }
     </style>
 </head>
 <body>
+    {% if player %}
+        <p>Welcome, {{ player }}!</p>
+        <a href="{{ url_for('merchants_list') }}">
+            <button>Merchant Menu</button>
+        </a>
+    {% endif %}
+
     <div class="map-container">
         <img src="{{ url_for('static', filename='img/cape_melaios.png') }}" alt="Map of Cape Melaios">
 

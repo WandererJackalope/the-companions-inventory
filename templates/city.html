@@ -1,8 +1,18 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+    <meta charset="UTF-8">
     <title>Merchants in {{ location }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
     <style>
+        body {
+            background-color: #1b3a1b;
+            color: #f5f5f5;
+            font-family: 'MedievalSharp', serif;
+            margin: 0;
+            padding: 20px;
+        }
+
         ul.merchant-list {
             list-style-type: none;
             padding: 0;
@@ -24,6 +34,21 @@
         ul.merchant-list a {
             font-size: 1.1em;
             text-decoration: none;
+            color: #f5f5f5;
+        }
+
+        button {
+            background-color: #3a613a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'MedievalSharp', serif;
+        }
+
+        button:hover {
+            background-color: #4a7a4a;
         }
     </style>
 </head>
@@ -39,9 +64,8 @@
             {% for merchant in merchants %}
                 <li>
                     <img src="{{ url_for('static', filename='img/merchants/' ~ merchant.merch_id ~ '.png') }}"
-                        alt="{{ merchant.name }}"
-                        onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
-
+                         alt="{{ merchant.name }}"
+                         onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/merchants/default.png') }}';">
                     <a href="{{ url_for('trade', merch_id=merchant.merch_id) }}">
                         {{ merchant.name }} (Level {{ merchant.level }})
                     </a>
